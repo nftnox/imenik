@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Imenik | Dobrodošao</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: #f0f2f5;
+      color: #333;
+    }
+    header {
+      background: #3498db;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { margin: 0; font-size: 1.8rem; }
+
+    .book {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      margin: 2rem auto;
+      max-width: 1000px;
+      height: 600px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      background: white;
+      overflow: hidden;
+    }
+
+   @media (min-width: 769px) {
+  .left-page, .right-page {
+    display: block;
+    width: 50%;
+    overflow-y: auto;
+    padding: 2rem;
+    height: 100%;
+  }
+
+  .left-page {
+    border-right: 4px solid red;
+    background: #eaf4ff;
+  }
+
+  .right-page {
+    background: #ffffff;
+  }
+}
+
+@media (max-width: 768px) {
+  .left-page,
+  .right-page {
+    display: none;
+    padding: 1rem;
+  }
+
+  .left-page.active,
+  .right-page.active {
+    display: block;
+  }
+}
+
+
+
+   
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .person-name {
+      margin: 0.5rem 0 0.5rem 1rem;
+      cursor: pointer;
+      color: #0077cc;
+      display: block;
+      font-weight: 500;
+      font-size: 1.05rem;
+    }
+
+    .person-name:hover {
+      color: #005599;
+    }
+
+    .details {
+  line-height: 1.6;
+  font-size: 1rem;
+  padding: 1rem;
+  background: #f7f9fb;
+  border-left: 4px solid #3498db;
+  border-radius: 8px;
+  white-space: pre-wrap;     /* ✅ Omogućava novi red kad tekst dosegne kraj */
+  word-break: break-word;    /* ✅ Riječi se prelome ako su preduge */
+  overflow-wrap: break-word; /* ✅ Prekid riječi ako ne stane u red */
+}
+
+
+    .btn-back {
+      margin-top: 1rem;
+      padding: 0.5rem 1.2rem;
+      background: #3498db;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-back:hover {
+      background: #2c80b4;
+    }
+
+    footer {
+      background: #eee;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .btn {
+      background: white;
+      border: 2px solid #fff;
+      color: #3498db;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      margin-left: 10px;
+    }
+
+    .btn:hover {
+      background: #2980b9;
+      color: white;
+    }
+
+    #popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    #popup-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    #popup-content input, #popup-content textarea {
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    section {
+      background: linear-gradient(to right, #74ebd5, #ACB6E5);
+      color: #333;
+      padding: 3rem 2rem;
+      text-align: center;
+      animation: fadein 1.5s;
+    }
+
+    #popup-content input,
+#popup-content textarea,
+#popup-content select {
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  height: 42px;
+  background-color: #fff;
+  color: #333;
+}
+
+#popup-content select:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 4px rgba(52, 152, 219, 0.5);
+}
+
+#mobileToggle {
+  display: none;
+  cursor: pointer;
+  font-size: 1.8rem;
+}
+
+#mobileMenu {
+  display: none;
+  position: absolute;
+  right: -1rem; /* <== povećaj vrijednost ako želiš još više udesno */
+  top: 70px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+
+#mobileMenu button {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  color: #3498db;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+#mobileMenu button:hover {
+  background: #f0f0f0;
+}
+
+@media (max-width: 768px) {
+  #userControls {
+    display: none !important;
+  }
+
+  #mobileToggle {
+    display: block;
+  }
+}
+@media (min-width: 769px) {
+  /* Sakrij dugme "nazad" unutar .right-page */
+  #nazadDetalji {
+    display: none !important;
+  }
+
+  /* Prikazi dugme za povratak na kategorije (u .left-page) */
+  .btn-kategorije {
+    display: inline-block !important;
+  }
+
+  /* Osiguraj da ostala dugmad (ako ih bude) ne smetaju */
+  .btn-back:not(.btn-kategorije) {
+    display: none !important;
+  }
+}
+
+
+/* ✅ Na desktopu: sakrij dugme "Nazad" unutar detalja */
+@media (min-width: 769px) {
+  #nazadDetalji {
+    display: none !important;
+  }
+}
+
+/* ✅ Na mobilnom: prikaži oba dugmeta */
+@media (max-width: 768px) {
+  .btn-back {
+    display: inline-block !important;
+  }
+}
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🔍 Imenik Majstora</h1>
+   <div id="userControls" style="display:none;">
+  <span id="pozdrav" style="margin-right: 10px; font-weight: 600;"></span>
+  <button class="btn" onclick="openPopup()">+ Objavi uslugu</button>
+  <button class="btn" onclick="window.location.href='profil.html'">Moj profil</button>
+</div>
+
+<div id="mobileToggle" onclick="toggleMobileMenu()">☰</div>
+<div id="mobileMenu">
+  <button onclick="openPopup()">+ Objavi uslugu</button>
+  <button onclick="window.location.href='profil.html'">Moj profil</button>
+</div>
+
+  </header>
+
+  <section>
+    <h2>Dobrodošli na Imenik Majstora!</h2>
+    <p style="max-width: 600px; margin: 0 auto; font-size: 1.1rem;">
+      Pregledaj usluge lokalnih majstora, frizera, čistačica, električara i drugih stručnjaka. Objavi svoju uslugu i poveži se s klijentima širom regije.
+    </p>
+  </section>
+
+  <div class="book">
+    <div class="left-page active" id="leftPage">
+      <h2>Učitavanje kategorija...</h2>
+    </div>
+    <div class="right-page" id="rightPage">
+  <h2>Detalji</h2>
+  <div class="details" id="detalji">Klikni na ime lijevo da vidiš detalje.</div>
+  <button class="btn-back" onclick="vratiNaKategorije()">⬅ Nazad</button>
+</div>
+
+  </div>
+
+  <footer>
+    <span id="footer-nickname" style="font-weight: 600;">Dobrodošli!</span>
+  </footer>
+
+  <div id="popup">
+    <div id="popup-content">
+      <h2>Dodaj svoju uslugu</h2>
+      <input type="text" id="ime" placeholder="Ime i prezime" required>
+      <select id="kategorija" required>
+  <option value="">-- Odaberi kategoriju --</option>
+  <option value="Električar">Električar</option>
+  <option value="Vodoinstalater">Vodoinstalater</option>
+  <option value="Zidar">Zidar</option>
+  <option value="Keramičar">Keramičar</option>
+  <option value="Moler">Moler</option>
+  <option value="Stolar">Stolar</option>
+  <option value="Limar">Limar</option>
+  <option value="Serviser">Serviser</option>
+  <option value="Automehaničar">Automehaničar</option>
+  <option value="Frizer">Frizer</option>
+  <option value="Kozmetičarka">Kozmetičarka</option>
+  <option value="Čistačica">Čistačica</option>
+  <option value="IT Servis">IT Servis</option>
+  <option value="Vozač">Vozač</option>
+  <option value="Građevinar">Građevinar</option>
+  <option value="Pekar">Pekar</option>
+  <option value="Zavarivač">Zavarivač</option>
+  <option value="Bravar">Bravar</option>
+  <option value="Autolakirer">Autolakirer</option>
+</select>
+      <input type="text" id="telefon" placeholder="Telefon" required>
+      <input type="text" id="email" placeholder="Email (opcionalno)">
+     <!-- LOKACIJA: Entitet > Kanton > Grad -->
+<label for="entitet">Lokacija</label>
+<select id="entitet" onchange="popuniKantone()" required>
+  <option value="">-- Odaberi entitet --</option>
+  <option value="Federacija BiH">Federacija BiH</option>
+  <option value="Republika Srpska">Republika Srpska</option>
+  <option value="Brčko distrikt">Brčko distrikt</option>
+</select>
+
+<select id="kanton" onchange="popuniGradove()" required style="margin-top: 0.5rem;">
+  <option value="">-- Prvo odaberi entitet --</option>
+</select>
+
+<select id="grad" required style="margin-top: 0.5rem;">
+  <option value="">-- Prvo odaberi kanton --</option>
+</select>
+      <input type="text" id="drzava" placeholder="Država" required>
+      <input type="text" id="cijena" placeholder="Cijena / način naplate">
+      <input type="text" id="iskustvo" placeholder="Iskustvo (opcionalno)">
+      <textarea id="opis" placeholder="Kratki opis usluge" rows="3"></textarea>
+      <div style="text-align:right;">
+        <button onclick="submitUsluga()">Objavi</button>
+        <button onclick="closePopup()">Otkaži</button>
+      </div>
+    </div>
+  </div>
+
+
+
+<script>
+const lokacije = {
+  "Federacija BiH": {
+    "Kanton Sarajevo": ["Sarajevo", "Ilidža", "Vogošća", "Hadžići"],
+    "Zeničko-dobojski kanton": ["Zenica", "Zavidovići", "Visoko", "Tešanj"],
+    "Tuzlanski kanton": ["Tuzla", "Lukavac", "Živinice", "Srebrenik"],
+    "Unsko-sanski kanton": ["Bihać", "Cazin", "Velika Kladuša", "Sanski Most"],
+    "Hercegovačko-neretvanski kanton": ["Mostar", "Čapljina", "Konjic", "Stolac"],
+    "Srednjobosanski kanton": ["Travnik", "Bugojno", "Kiseljak", "Jajce"],
+    "Zapadnohercegovački kanton": ["Široki Brijeg", "Grude", "Ljubuški", "Posušje"],
+    "Bosansko-podrinjski kanton": ["Goražde"],
+    "Posavski kanton": ["Odžak", "Orašje", "Domaljevac"],
+    "Kanton 10": ["Livno", "Tomislavgrad", "Kupres"]
+  },
+  "Republika Srpska": {
+    "Banja Luka regija": ["Banja Luka", "Prijedor", "Gradiška"],
+    "Bijeljina regija": ["Bijeljina", "Zvornik", "Bratunac"],
+    "Istočno Sarajevo regija": ["Istočno Sarajevo", "Pale", "Sokolac"],
+    "Trebinje regija": ["Trebinje", "Bileća", "Gacko"],
+    "Doboj regija": ["Doboj", "Derventa", "Modriča"],
+    "Mrkonjić Grad regija": ["Mrkonjić Grad", "Šipovo", "Jezer"]
+  },
+  "Brčko distrikt": {
+    "Brčko distrikt": ["Brčko"]
+  }
+};
+
+function popuniKantone() {
+  const entitet = document.getElementById("entitet").value;
+  const kantonSelect = document.getElementById("kanton");
+  const gradSelect = document.getElementById("grad");
+
+  kantonSelect.innerHTML = '<option value="">-- Odaberi kanton --</option>';
+  gradSelect.innerHTML = '<option value="">-- Prvo odaberi kanton --</option>';
+
+  if (!entitet) return;
+
+  const kantoni = Object.keys(lokacije[entitet]);
+  kantoni.forEach(k => {
+    const opt = document.createElement("option");
+    opt.value = k;
+    opt.textContent = k;
+    kantonSelect.appendChild(opt);
+  });
+}
+
+function popuniGradove() {
+  const entitet = document.getElementById("entitet").value;
+  const kanton = document.getElementById("kanton").value;
+  const gradSelect = document.getElementById("grad");
+
+  gradSelect.innerHTML = '<option value="">-- Odaberi grad --</option>';
+
+  if (!entitet || !kanton) return;
+
+  const gradovi = lokacije[entitet][kanton];
+  gradovi.forEach(g => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    opt.textContent = g;
+    gradSelect.appendChild(opt);
+  });
+}
+</script>
+
+
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzf8QXkJ06luDv9L-w3v4uCGQd1W2nwRk",
+      authDomain: "imenik-platforma.firebaseapp.com",
+      projectId: "imenik-platforma",
+      storageBucket: "imenik-platforma.firebasestorage.app",
+      messagingSenderId: "93699114182",
+      appId: "1:93699114182:web:9dbc895619264250c603c7",
+      measurementId: "G-NE4S2DPWFB"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const uid = localStorage.getItem('uid');
+    const leftPage = document.getElementById('leftPage');
+    const rightPage = document.getElementById('rightPage');
+    const detalji = document.getElementById('detalji');
+    const pozdrav = document.getElementById('pozdrav');
+    const footerNick = document.getElementById('footer-nickname');
+    const userControls = document.getElementById('userControls');
+
+    if (uid) {
+      db.collection("users").doc(uid).get().then(doc => {
+        const data = doc.data();
+        pozdrav.innerText = `Pozdrav, ${data.nickname}`;
+        footerNick.innerText = `Pozdrav, ${data.nickname}`;
+        userControls.style.display = "block";
+      });
+    }
+
+    function prikaziDetalje(usluga) {
+      detalji.innerText = `👤 Ime: ${usluga.ime}
+📞 Telefon: ${usluga.telefon}
+📧 Email: ${usluga.email || '-'}
+📍 Adresa: ${usluga.grad}, ${usluga.drzava}
+💸 Cijena: ${usluga.cijena || '-'}
+🧰 Iskustvo: ${usluga.iskustvo || '-'}
+📝 Opis: ${usluga.opis}`;
+      if (window.innerWidth < 768) {
+  leftPage.classList.remove('active');
+  rightPage.classList.add('active');
+}
+
+    }
+
+    function vratiNaKategorije() {
+      if (window.innerWidth < 768) {
+  rightPage.classList.remove('active');
+  leftPage.classList.add('active');
+}
+
+    }
+
+    async function ucitajUsluge() {
+      const snapshot = await db.collection("usluge").get();
+      const usluge = {};
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (!usluge[data.kategorija]) usluge[data.kategorija] = [];
+        usluge[data.kategorija].push(data);
+      });
+
+      leftPage.innerHTML = '<h2>📘 Kategorije</h2>';
+
+      for (let kat in usluge) {
+        const katEl = document.createElement('h3');
+        katEl.textContent = kat;
+        katEl.style.cursor = 'pointer';
+        katEl.style.marginLeft = '1rem';
+        katEl.onclick = () => {
+          leftPage.innerHTML = `<h2>${kat}</h2>`;
+          usluge[kat].forEach(usluga => {
+            const span = document.createElement('span');
+            span.className = 'person-name';
+            span.textContent = usluga.ime;
+            span.onclick = () => prikaziDetalje(usluga);
+            leftPage.appendChild(span);
+          });
+          const btn = document.createElement('button');
+          btn.textContent = '⬅ Nazad na kategorije';
+          btn.className = 'btn-back btn-kategorije';
+
+          btn.onclick = ucitajUsluge;
+          leftPage.appendChild(btn);
+        };
+        leftPage.appendChild(katEl);
+      }
+
+      leftPage.classList.add('active');
+      rightPage.classList.remove('active');
+    }
+
+    function openPopup() {
+  document.getElementById('popup').style.display = 'flex';
+  document.getElementById('mobileMenu').style.display = 'none'; // ✅ sakrij meni kad se otvori popup
+}
+
+
+    function closePopup() {
+      document.getElementById('popup').style.display = 'none';
+    }
+
+    function submitUsluga() {
+      const ime = document.getElementById('ime').value;
+      const kategorija = document.getElementById('kategorija').value;
+      const telefon = document.getElementById('telefon').value;
+      const email = document.getElementById('email').value;
+      const grad = document.getElementById('grad').value;
+      const drzava = document.getElementById('drzava').value;
+      const opis = document.getElementById('opis').value;
+      const cijena = document.getElementById('cijena').value;
+      const iskustvo = document.getElementById('iskustvo').value;
+
+      if (!ime || !kategorija || !telefon || !grad || !drzava || !opis) {
+        alert("Popuni obavezna polja.");
+        return;
+      }
+
+      db.collection("usluge").add({
+        ime, kategorija, telefon, email, grad, drzava, opis, cijena, iskustvo, userId: uid || null
+      }).then(() => {
+        closePopup();
+        ucitajUsluge();
+      });
+    }
+
+    ucitajUsluge();
+
+    function toggleMobileMenu() {
+  const menu = document.getElementById('mobileMenu');
+  if (menu.style.display === 'block') {
+    menu.style.display = 'none';
+  } else {
+    menu.style.display = 'block';
+  }
+}
+
+
+function vratiNaImena() {
+  if (window.innerWidth < 768) {
+    rightPage.classList.remove('active');
+    leftPage.classList.add('active');
+  }
+}
+
+  </script>
+</body>
+</html>
