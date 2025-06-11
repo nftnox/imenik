@@ -12,7 +12,34 @@
       background: #f9f9f9;
       padding: 2rem;
     }
-    h1 { text-align: center; }
+    h1, h2 {
+      text-align: center;
+    }
+    .profil {
+      background: white;
+      border: 1px solid #ddd;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .profil img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .profil-info input {
+      display: block;
+      width: 100%;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
     .usluga {
       background: white;
       border: 1px solid #ddd;
@@ -56,14 +83,23 @@
       border: 1px solid #ccc;
       border-radius: 5px;
     }
-    .popup-content button {
-      margin-right: 10px;
-    }
   </style>
 </head>
 <body>
 
-  <h1>🧍 Moj Profil – Usluge koje ste objavili</h1>
+  <h1>🧍 Moj Profil</h1>
+  <div class="profil">
+    <img id="profilna-slika" src="" alt="Profilna slika">
+    <div class="profil-info">
+      <input type="file" id="upload-slika">
+      <input type="text" id="update-telefon" placeholder="Novi broj telefona">
+      <input type="text" id="update-grad" placeholder="Novi grad">
+      <button onclick="spasiProfil()">💾 Spasi promjene</button>
+    </div>
+  </div>
+
+  <hr>
+  <h2>🛠️ Moje objavljene usluge</h2>
   <div id="usluge-lista"></div>
 
   <!-- POPUP za edit -->
@@ -96,7 +132,7 @@
       apiKey: "AIzaSyAzf8QXkJ06luDv9L-w3v4uCGQd1W2nwRk",
       authDomain: "imenik-platforma.firebaseapp.com",
       projectId: "imenik-platforma",
-      storageBucket: "imenik-platforma.firebasestorage.app",
+      storageBucket: "imenik-platforma.appspot.com",
       messagingSenderId: "93699114182",
       appId: "1:93699114182:web:9dbc895619264250c603c7"
     };
@@ -107,7 +143,7 @@
     if (!uid) window.location.href = "login.html";
 
     const lista = document.getElementById("usluge-lista");
-    let trenutniID = null;
+    const profilnaSlika = document.getElementById("profilna-slika");
 
     async function ucitajUsluge() {
       const snapshot = await db.collection("usluge").where("userId", "==", uid).get();
@@ -131,6 +167,39 @@
         `;
         lista.appendChild(div);
       });
+    }
+
+    async function ucitajProfil() {
+      const doc = await db.collection("users").doc(uid).get();
+      if (doc.exists) {
+        const data = doc.data();
+        if (data.slika) profilnaSlika.src = data.slika;
+        document.getElementById("update-telefon").value = data.telefon || "";
+        document.getElementById("update-grad").value = data.grad || "";
+      }
+    }
+
+    async function spasiProfil() {
+      const fileInput = document.getElementById("upload-slika");
+      const file = fileInput.files[0];
+      const telefon = document.getElementById("update-telefon").value;
+      const grad = document.getElementById("update-grad").value;
+
+      let slikaURL = null;
+      if (file) {
+        slikaURL = await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const updateData = { telefon, grad };
+      if (slikaURL) updateData.slika = slikaURL;
+
+      await db.collection("users").doc(uid).update(updateData);
+      alert("Profil ažuriran!");
+      ucitajProfil();
     }
 
     function otvoriPopup(id, data) {
@@ -177,6 +246,7 @@
     }
 
     ucitajUsluge();
+    ucitajProfil();
   </script>
 </body>
 </html>
