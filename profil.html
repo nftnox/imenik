@@ -5,7 +5,260 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Moj Profil</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
+  
+</head>
+<body>
+
+
+<header>
+  <h1>🔍 Imenik Majstora</h1>
+
+  <div id="userControls">
+    <span id="pozdrav" style="margin-right: 10px; font-weight: 600;"></span>
+    <button class="btn" onclick="window.location.href='index.html'">🏠 Početna</button>
+  </div>
+
+  <div id="mobileToggle" onclick="toggleMobileMenu()">☰</div>
+  <div id="mobileMenu">
+    <button onclick="window.location.href='index.html'">🏠 Početna</button>
+  </div>
+</header>
+
+
+  
+  <h1 id="naslov-profila">🧍 Moj Profil</h1>
+
+  <div class="profil">
+    <img id="profilna-slika" src="" alt="Profilna slika">
+    <div class="profil-info">
+   <p><strong>Nadimak:</strong> <span id="korisnik-nadimak">-</span></p>
+<p><strong>Grad:</strong> <span id="korisnik-grad">-</span></p>
+<input type="file" id="upload-slika">
+      <button onclick="spasiProfil()">💾 Spasi promjene</button>
+    </div>
+  </div>
+
+  <hr>
+  <h2 id="naslov-usluga">🛠️ Moje objavljene usluge</h2>
+
+  <div id="usluge-lista"></div>
+
+  <!-- POPUP za edit -->
+  <div class="popup" id="popup">
+    <div class="popup-content">
+      <h2>Uredi uslugu</h2>
+      <input type="text" id="edit-ime" placeholder="Ime i prezime">
+      <input type="text" id="edit-kategorija" placeholder="Kategorija">
+      <input type="text" id="edit-telefon" placeholder="Telefon">
+      <input type="text" id="edit-email" placeholder="Email">
+      <input type="text" id="edit-grad" placeholder="Grad">
+      <input type="text" id="edit-drzava" placeholder="Država">
+      <input type="text" id="edit-cijena" placeholder="Cijena">
+      <input type="text" id="edit-iskustvo" placeholder="Iskustvo">
+      <textarea id="edit-opis" placeholder="Opis"></textarea>
+      <div>
+        <button onclick="spasiIzmjene()">💾 Spasi</button>
+        <button onclick="zatvoriPopup()">Otkaži</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzf8QXkJ06luDv9L-w3v4uCGQd1W2nwRk",
+      authDomain: "imenik-platforma.firebaseapp.com",
+      projectId: "imenik-platforma",
+      storageBucket: "imenik-platforma.appspot.com",
+      messagingSenderId: "93699114182",
+      appId: "1:93699114182:web:9dbc895619264250c603c7"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const uid = localStorage.getItem("uid");
+    const urlParams = new URLSearchParams(window.location.search);
+const prikazaniUID = urlParams.get("uid") || uid;
+const gledamSebea = prikazaniUID === uid;
+
+    if (!uid) window.location.href = "login.html";
+
+    const lista = document.getElementById("usluge-lista");
+    const profilnaSlika = document.getElementById("profilna-slika");
+
+    async function ucitajUsluge() {
+      const snapshot = await db.collection("usluge").where("userId", "==", prikazaniUID).get();
+      lista.innerHTML = "";
+      snapshot.forEach(doc => {
+  const data = doc.data();
+  const div = document.createElement("div");
+  div.className = "usluga";
+
+  let actionsHTML = '';
+  if (gledamSebea) {
+    actionsHTML = `
+      <div class="actions">
+        <button class="edit-btn" onclick="otvoriPopup('${doc.id}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">✏️ Uredi</button>
+        <button class="delete-btn" onclick="obrisiUslugu('${doc.id}')">🗑️ Obriši</button>
+      </div>
+    `;
+  }
+
+  div.innerHTML = `
+    <h3>${data.ime} (${data.kategorija})</h3>
+    <p><strong>Telefon:</strong> ${data.telefon}<br>
+    <strong>Email:</strong> ${data.email || '-'}<br>
+    <strong>Grad:</strong> ${data.grad}, ${data.drzava}<br>
+    <strong>Cijena:</strong> ${data.cijena || '-'}<br>
+    <strong>Iskustvo:</strong> ${data.iskustvo || '-'}<br>
+    <strong>Opis:</strong> ${data.opis}</p>
+    ${actionsHTML}
+  `;
+
+  lista.appendChild(div);
+});
+
+
+      if (!gledamSebea) {
+  div.querySelector('.actions').style.display = "none";
+}
+
+    }
+
+    async function ucitajProfil() {
+      const doc = await db.collection("users").doc(prikazaniUID).get();
+      if (doc.exists) {
+        const data = doc.data();
+        if (data.profilnaUrl) profilnaSlika.src = data.profilnaUrl;
+
+       document.getElementById("korisnik-nadimak").innerText = data.nickname || "-";
+document.getElementById("korisnik-grad").innerText = data.grad || "-";
+      }
+    }
+
+if (!gledamSebea) {
+  document.getElementById("upload-slika").style.display = "none";
+  const btnSpasi = document.querySelector('button[onclick="spasiProfil()"]');
+  if (btnSpasi) btnSpasi.style.display = "none";
+}
+
+
+    async function spasiProfil() {
+  const fileInput = document.getElementById("upload-slika");
+  const file = fileInput.files[0];
+  const telefon = document.getElementById("update-telefon").value;
+  const grad = document.getElementById("update-grad").value;
+
+  let slikaURL = null;
+  if (file) {
+    slikaURL = await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const updateData = { telefon, grad };
+  if (slikaURL) updateData.profilnaUrl = slikaURL;
+
+  await db.collection("users").doc(uid).update(updateData);
+  alert("Profil ažuriran!");
+  ucitajProfil();
+}
+
+
+    function otvoriPopup(id, data) {
+      trenutniID = id;
+      document.getElementById("edit-ime").value = data.ime;
+      document.getElementById("edit-kategorija").value = data.kategorija;
+      document.getElementById("edit-telefon").value = data.telefon;
+      document.getElementById("edit-email").value = data.email || "";
+      document.getElementById("edit-grad").value = data.grad;
+      document.getElementById("edit-drzava").value = data.drzava;
+      document.getElementById("edit-cijena").value = data.cijena || "";
+      document.getElementById("edit-iskustvo").value = data.iskustvo || "";
+      document.getElementById("edit-opis").value = data.opis;
+      document.getElementById("popup").style.display = "flex";
+    }
+
+    function zatvoriPopup() {
+      document.getElementById("popup").style.display = "none";
+    }
+
+    function spasiIzmjene() {
+      const ime = document.getElementById("edit-ime").value;
+      const kategorija = document.getElementById("edit-kategorija").value;
+      const telefon = document.getElementById("edit-telefon").value;
+      const email = document.getElementById("edit-email").value;
+      const grad = document.getElementById("edit-grad").value;
+      const drzava = document.getElementById("edit-drzava").value;
+      const opis = document.getElementById("edit-opis").value;
+      const cijena = document.getElementById("edit-cijena").value;
+      const iskustvo = document.getElementById("edit-iskustvo").value;
+
+      db.collection("usluge").doc(trenutniID).update({
+        ime, kategorija, telefon, email, grad, drzava, opis, cijena, iskustvo
+      }).then(() => {
+        zatvoriPopup();
+        ucitajUsluge();
+      });
+    }
+
+    function obrisiUslugu(id) {
+      if (confirm("Da li ste sigurni da želite obrisati ovu uslugu?")) {
+        db.collection("usluge").doc(id).delete().then(ucitajUsluge);
+      }
+    }
+
+    ucitajUsluge();
+    ucitajProfil();
+
+
+    function toggleMobileMenu() {
+  const menu = document.getElementById('mobileMenu');
+  if (menu.style.display === 'block') {
+    menu.style.display = 'none';
+  } else {
+    menu.style.display = 'block';
+  }
+}
+
+
+
+
+const pozdrav = document.getElementById("pozdrav");
+
+if (uid) {
+  db.collection("users").doc(uid).get().then(doc => {
+    const data = doc.data();
+    if (data && data.nickname) {
+      pozdrav.innerText = `Pozdrav, ${data.nickname}`;
+    }
+  });
+}
+
+
+
+document.getElementById("naslov-profila").innerText = gledamSebea ? "🧍 Moj Profil" : "👤 Profil korisnika";
+
+
+
+document.getElementById("naslov-usluga").innerText = gledamSebea ? "🛠️ Moje objavljene usluge" : "🛠️ Usluge korisnika";
+
+  </script>
+</body>
+
+
+
+
+
+
+
+<style>
     body {
       font-family: 'Inter', sans-serif;
       margin: 0;
@@ -83,171 +336,89 @@
       border: 1px solid #ccc;
       border-radius: 5px;
     }
+
+
+    header {
+  background: #3498db;
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.btn {
+  background: white;
+  border: 2px solid #fff;
+  color: #3498db;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  margin-left: 10px;
+}
+
+.btn:hover {
+  background: #2980b9;
+  color: white;
+}
+
+#mobileToggle {
+  display: none;
+  cursor: pointer;
+  font-size: 1.8rem;
+}
+
+#mobileMenu {
+  display: none;
+  position: absolute;
+  right: -1rem;
+  top: 70px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+#mobileMenu button {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  color: #3498db;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+#mobileMenu button:hover {
+  background: #f0f0f0;
+}
+
+@media (max-width: 768px) {
+  #mobileToggle {
+    display: block;
+  }
+}
+
+
+#userControls {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  #userControls {
+    display: none !important;
+  }
+}
+
   </style>
-</head>
-<body>
-
-  <h1>🧍 Moj Profil</h1>
-  <div class="profil">
-    <img id="profilna-slika" src="" alt="Profilna slika">
-    <div class="profil-info">
-      <input type="file" id="upload-slika">
-      <input type="text" id="update-telefon" placeholder="Novi broj telefona">
-      <input type="text" id="update-grad" placeholder="Novi grad">
-      <button onclick="spasiProfil()">💾 Spasi promjene</button>
-    </div>
-  </div>
-
-  <hr>
-  <h2>🛠️ Moje objavljene usluge</h2>
-  <div id="usluge-lista"></div>
-
-  <!-- POPUP za edit -->
-  <div class="popup" id="popup">
-    <div class="popup-content">
-      <h2>Uredi uslugu</h2>
-      <input type="text" id="edit-ime" placeholder="Ime i prezime">
-      <input type="text" id="edit-kategorija" placeholder="Kategorija">
-      <input type="text" id="edit-telefon" placeholder="Telefon">
-      <input type="text" id="edit-email" placeholder="Email">
-      <input type="text" id="edit-grad" placeholder="Grad">
-      <input type="text" id="edit-drzava" placeholder="Država">
-      <input type="text" id="edit-cijena" placeholder="Cijena">
-      <input type="text" id="edit-iskustvo" placeholder="Iskustvo">
-      <textarea id="edit-opis" placeholder="Opis"></textarea>
-      <div>
-        <button onclick="spasiIzmjene()">💾 Spasi</button>
-        <button onclick="zatvoriPopup()">Otkaži</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAzf8QXkJ06luDv9L-w3v4uCGQd1W2nwRk",
-      authDomain: "imenik-platforma.firebaseapp.com",
-      projectId: "imenik-platforma",
-      storageBucket: "imenik-platforma.appspot.com",
-      messagingSenderId: "93699114182",
-      appId: "1:93699114182:web:9dbc895619264250c603c7"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const uid = localStorage.getItem("uid");
-    if (!uid) window.location.href = "login.html";
-
-    const lista = document.getElementById("usluge-lista");
-    const profilnaSlika = document.getElementById("profilna-slika");
-
-    async function ucitajUsluge() {
-      const snapshot = await db.collection("usluge").where("userId", "==", uid).get();
-      lista.innerHTML = "";
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const div = document.createElement("div");
-        div.className = "usluga";
-        div.innerHTML = `
-          <h3>${data.ime} (${data.kategorija})</h3>
-          <p><strong>Telefon:</strong> ${data.telefon}<br>
-          <strong>Email:</strong> ${data.email || '-'}<br>
-          <strong>Grad:</strong> ${data.grad}, ${data.drzava}<br>
-          <strong>Cijena:</strong> ${data.cijena || '-'}<br>
-          <strong>Iskustvo:</strong> ${data.iskustvo || '-'}<br>
-          <strong>Opis:</strong> ${data.opis}</p>
-          <div class="actions">
-            <button class="edit-btn" onclick="otvoriPopup('${doc.id}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">✏️ Uredi</button>
-            <button class="delete-btn" onclick="obrisiUslugu('${doc.id}')">🗑️ Obriši</button>
-          </div>
-        `;
-        lista.appendChild(div);
-      });
-    }
-
-    async function ucitajProfil() {
-      const doc = await db.collection("users").doc(uid).get();
-      if (doc.exists) {
-        const data = doc.data();
-        if (data.profilnaUrl) profilnaSlika.src = data.profilnaUrl;
-
-        document.getElementById("update-telefon").value = data.telefon || "";
-        document.getElementById("update-grad").value = data.grad || "";
-      }
-    }
-
-    async function spasiProfil() {
-      const fileInput = document.getElementById("upload-slika");
-      const file = fileInput.files[0];
-      const telefon = document.getElementById("update-telefon").value;
-      const grad = document.getElementById("update-grad").value;
-
-      let slikaURL = null;
-      if (file) {
-        slikaURL = await new Promise(resolve => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(file);
-        });
-      }
-
-      const updateData = { telefon, grad };
-      if (slikaURL) updateData.slika = slikaURL;
-
-      await db.collection("users").doc(uid).update(updateData);
-      alert("Profil ažuriran!");
-      ucitajProfil();
-    }
-
-    function otvoriPopup(id, data) {
-      trenutniID = id;
-      document.getElementById("edit-ime").value = data.ime;
-      document.getElementById("edit-kategorija").value = data.kategorija;
-      document.getElementById("edit-telefon").value = data.telefon;
-      document.getElementById("edit-email").value = data.email || "";
-      document.getElementById("edit-grad").value = data.grad;
-      document.getElementById("edit-drzava").value = data.drzava;
-      document.getElementById("edit-cijena").value = data.cijena || "";
-      document.getElementById("edit-iskustvo").value = data.iskustvo || "";
-      document.getElementById("edit-opis").value = data.opis;
-      document.getElementById("popup").style.display = "flex";
-    }
-
-    function zatvoriPopup() {
-      document.getElementById("popup").style.display = "none";
-    }
-
-    function spasiIzmjene() {
-      const ime = document.getElementById("edit-ime").value;
-      const kategorija = document.getElementById("edit-kategorija").value;
-      const telefon = document.getElementById("edit-telefon").value;
-      const email = document.getElementById("edit-email").value;
-      const grad = document.getElementById("edit-grad").value;
-      const drzava = document.getElementById("edit-drzava").value;
-      const opis = document.getElementById("edit-opis").value;
-      const cijena = document.getElementById("edit-cijena").value;
-      const iskustvo = document.getElementById("edit-iskustvo").value;
-
-      db.collection("usluge").doc(trenutniID).update({
-        ime, kategorija, telefon, email, grad, drzava, opis, cijena, iskustvo
-      }).then(() => {
-        zatvoriPopup();
-        ucitajUsluge();
-      });
-    }
-
-    function obrisiUslugu(id) {
-      if (confirm("Da li ste sigurni da želite obrisati ovu uslugu?")) {
-        db.collection("usluge").doc(id).delete().then(ucitajUsluge);
-      }
-    }
-
-    ucitajUsluge();
-    ucitajProfil();
-  </script>
-</body>
 </html>
