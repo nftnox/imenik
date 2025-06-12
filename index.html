@@ -25,12 +25,20 @@
 
   </header>
 
-  <section>
-    <h2>Dobrodošli na Imenik Majstora!</h2>
-    <p style="max-width: 600px; margin: 0 auto; font-size: 1.1rem;">
-      Pregledaj usluge lokalnih majstora, frizera, čistačica, električara i drugih stručnjaka. Objavi svoju uslugu i poveži se s klijentima širom regije.
+ <section class="hero">
+  <div class="hero-content">
+    <h2>Dobrodošli na <span>Imenik Majstora</span> 👷‍♂️</h2>
+    <p>
+      Otkrij majstore, frizere, servisere i stručnjake u tvojoj blizini! Poveži se s profesionalcima
+      iz cijele regije – jednostavno, brzo i pouzdano.
     </p>
-  </section>
+    <p>
+      Bilo da trebaš električara, čistačicu, automehaničara ili IT podršku – na pravom si mjestu.
+    </p>
+    <a class="cta-button" href="#leftPage">🔎 Pregledaj usluge</a>
+  </div>
+</section>
+
 
   <div class="book">
     <div class="left-page active" id="leftPage">
@@ -43,6 +51,19 @@
 </div>
 
   </div>
+
+
+
+<section class="info-blok">
+  <h3>🛠️ Šta sve nudi naš imenik?</h3>
+  <ul>
+    <li>✔️ Direktan kontakt sa majstorima</li>
+    <li>✔️ Kategorije po struci i regiji</li>
+    <li>✔️ Brza i besplatna objava vlastite usluge</li>
+    <li>✔️ Mogućnost pregleda tuđih profila</li>
+  </ul>
+</section>
+
 
   <footer>
     <span id="footer-nickname" style="font-weight: 600;">Dobrodošli!</span>
@@ -231,7 +252,12 @@ function popuniGradove() {
   detalji.innerHTML = `
     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
       <img src="${slika}" alt="Profilna slika" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
-      <h2 style="margin: 0;">${imePrezime}</h2>
+      <h2 style="margin: 0;">
+  <a href="profil.html?uid=${usluga.userId}" style="color: #3498db; text-decoration: none;">
+    ${imePrezime}
+  </a>
+</h2>
+
     </div>
     <div class="detail-box">📞 <strong>Telefon:</strong> ${usluga.telefon}</div>
     <div class="detail-box">📧 <strong>Email:</strong> ${usluga.email || '-'}</div>
@@ -470,44 +496,49 @@ function vratiNaImena() {
     }
 
     .person-name {
-      margin: 0.5rem 0 0.5rem 1rem;
-      cursor: pointer;
-      color: #0077cc;
-      display: block;
-      font-weight: 500;
-      font-size: 1.05rem;
-    }
+  margin: 0.5rem 0 0.5rem 1rem;
+  cursor: pointer;
+  color: #0077cc;
+  display: block;
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding: 0.4rem 0.6rem;
+  transition: background 0.3s, color 0.3s;
+  border-radius: 4px;
+}
+.person-name:hover {
+  background: #dceeff;
+  color: #005599;
+}
 
-    .person-name:hover {
-      color: #005599;
-    }
-
-    .details {
-  line-height: 1.6;
-  font-size: 1rem;
-  padding: 1rem;
-  background: #f7f9fb;
+.details {
+  background: #ffffff;
   border-left: 4px solid #3498db;
-  border-radius: 8px;
-  white-space: pre-wrap;     /* ✅ Omogućava novi red kad tekst dosegne kraj */
-  word-break: break-word;    /* ✅ Riječi se prelome ako su preduge */
-  overflow-wrap: break-word; /* ✅ Prekid riječi ako ne stane u red */
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  font-size: 1rem;
+  line-height: 1.6;
+  animation: fadein 0.6s ease;
 }
 
 
-    .btn-back {
-      margin-top: 1rem;
-      padding: 0.5rem 1.2rem;
-      background: #3498db;
-      border: none;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-    }
 
-    .btn-back:hover {
-      background: #2c80b4;
-    }
+    .btn-back {
+  margin-top: 2rem;
+  padding: 0.6rem 1.4rem;
+  background: linear-gradient(to right, #3498db, #2ecc71);
+  border: none;
+  color: white;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.btn-back:hover {
+  background: linear-gradient(to right, #2c80b4, #27ae60);
+}
+
 
     footer {
       background: #eee;
@@ -570,6 +601,64 @@ function vratiNaImena() {
       text-align: center;
       animation: fadein 1.5s;
     }
+
+
+
+
+
+
+.hero {
+  background: linear-gradient(135deg, #3498db, #9b59b6);
+  color: white;
+  padding: 4rem 2rem;
+  text-align: center;
+  animation: fadein 1s ease;
+}
+.hero-content {
+  max-width: 700px;
+  margin: 0 auto;
+  animation: slideup 1.5s ease;
+}
+.hero h2 {
+  font-size: 2.2rem;
+  margin-bottom: 1rem;
+}
+.hero h2 span {
+  color: #f1c40f;
+}
+.hero p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+.cta-button {
+  background: #f1c40f;
+  color: #333;
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+.cta-button:hover {
+  background: #ffe066;
+  color: black;
+}
+
+@keyframes slideup {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
 
     #popup-content input,
 #popup-content textarea,
@@ -678,6 +767,32 @@ function vratiNaImena() {
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   font-size: 1rem;
+}
+
+
+
+.info-blok {
+  background: #fdfdfd;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+.info-blok h3 {
+  color: #333;
+  font-size: 1.7rem;
+  margin-bottom: 1rem;
+}
+.info-blok ul {
+  list-style: none;
+  padding: 0;
+  max-width: 700px;
+  margin: 0 auto;
+}
+.info-blok li {
+  background: #eaf4ff;
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
 }
 
   </style>
