@@ -208,9 +208,31 @@ function popuniGradove() {
       });
     }
 
-    function prikaziDetalje(usluga) {
+    async function prikaziDetalje(usluga) {
+  let imePrezime = usluga.ime || "Nepoznato ime";
+  let slika = "https://via.placeholder.com/80";
+
+  if (usluga.userId) {
+    try {
+      const doc = await db.collection("users").doc(usluga.userId).get();
+      const data = doc.data();
+      if (data) {
+        imePrezime = `${data.ime || ''} ${data.prezime || ''}`.trim();
+        if (data.profilnaUrl && data.profilnaUrl !== "") {
+  slika = data.profilnaUrl;
+}
+
+      }
+    } catch (err) {
+      console.error("Greška pri učitavanju korisnika:", err);
+    }
+  }
+
   detalji.innerHTML = `
-    <div class="detail-box">👤 <strong>Ime:</strong> ${usluga.ime}</div>
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+      <img src="${slika}" alt="Profilna slika" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
+      <h2 style="margin: 0;">${imePrezime}</h2>
+    </div>
     <div class="detail-box">📞 <strong>Telefon:</strong> ${usluga.telefon}</div>
     <div class="detail-box">📧 <strong>Email:</strong> ${usluga.email || '-'}</div>
     <div class="detail-box">📍 <strong>Adresa:</strong> ${usluga.grad}, ${usluga.drzava}</div>
@@ -233,6 +255,28 @@ function popuniGradove() {
 }
 
     }
+
+
+
+async function popuniFormuIzFirestora() {
+  if (!uid) return;
+  try {
+    const doc = await db.collection("users").doc(uid).get();
+    if (!doc.exists) return;
+    const data = doc.data();
+
+    // Popuni polja u formi
+    document.getElementById("ime").value = `${data.ime || ""} ${data.prezime || ""}`;
+    document.getElementById("telefon").value = data.telefon || "";
+    document.getElementById("email").value = data.email || "";
+    document.getElementById("grad").value = data.grad || "";
+    document.getElementById("drzava").value = data.drzava || "";
+  } catch (err) {
+    console.error("Greška pri dohvaćanju korisničkih podataka:", err);
+  }
+}
+
+
 
     async function ucitajUsluge() {
   const snapshot = await db.collection("usluge").get();
@@ -281,10 +325,12 @@ function popuniGradove() {
 }
 
 
-    function openPopup() {
+   function openPopup() {
   document.getElementById('popup').style.display = 'flex';
-  document.getElementById('mobileMenu').style.display = 'none'; // ✅ sakrij meni kad se otvori popup
+  document.getElementById('mobileMenu').style.display = 'none';
+  popuniFormuIzFirestora(); // ✅ Popuni polja iz Firestore
 }
+
 
 
     function closePopup() {
@@ -392,15 +438,6 @@ function vratiNaImena() {
   .right-page {
     background: #ffffff;
   }
-
-  @media (max-width: 768px) {
-  .right-page.active {
-    height: calc(100vh - 160px); /* visina minus header + margine */
-    overflow-y: auto;
-  }
-}
-
-
 }
 
 @media (max-width: 768px) {
@@ -408,6 +445,14 @@ function vratiNaImena() {
   .right-page {
     display: none;
     padding: 1rem;
+  }
+
+
+
+.right-page.active {
+    max-height: calc(100vh - 140px); /* header + margine */
+    overflow-y: auto;
+    padding-bottom: 2rem;
   }
 
   .left-page.active,
