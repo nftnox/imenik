@@ -97,7 +97,11 @@
 </select>
       <input type="text" id="telefon" placeholder="Telefon" required>
       <input type="text" id="email" placeholder="Email (opcionalno)">
-     <!-- LOKACIJA: Entitet > Kanton > Grad -->
+   <input type="text" id="website" placeholder="Web stranica (opcionalno)">
+<input type="text" id="facebook" placeholder="Facebook stranica (opcionalno)">
+<input type="text" id="instagram" placeholder="Instagram profil (opcionalno)">
+
+      <!-- LOKACIJA: Entitet > Kanton > Grad -->
 <label for="entitet">Lokacija</label>
 <select id="entitet" onchange="popuniKantone()" required>
   <option value="">-- Odaberi entitet --</option>
@@ -250,22 +254,33 @@ function popuniGradove() {
   }
 
   detalji.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-      <img src="${slika}" alt="Profilna slika" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
-      <h2 style="margin: 0;">
-  <a href="profil.html?uid=${usluga.userId}" style="color: #3498db; text-decoration: none;">
-    ${imePrezime}
-  </a>
-</h2>
-
+  <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; margin-top: -3rem;">
+    <img src="${slika}" alt="Profilna slika" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
+    <div style="display: flex; flex-direction: column; justify-content: center;">
+  <a href="profil.html?uid=${usluga.userId}" style="font-size: 1.2rem; font-weight: 600; color: #3498db; text-decoration: none; line-height: 1.2;">
+  ${imePrezime}
+</a>
     </div>
-    <div class="detail-box">📞 <strong>Telefon:</strong> ${usluga.telefon}</div>
-    <div class="detail-box">📧 <strong>Email:</strong> ${usluga.email || '-'}</div>
-    <div class="detail-box">📍 <strong>Adresa:</strong> ${usluga.grad}, ${usluga.drzava}</div>
-    <div class="detail-box">💸 <strong>Cijena:</strong> ${usluga.cijena || '-'}</div>
-    <div class="detail-box">🧰 <strong>Iskustvo:</strong> ${usluga.iskustvo || '-'}</div>
-    <div class="detail-box">📝 <strong>Opis:</strong><br>${usluga.opis}</div>
-  `;
+  </div>
+ <div class="detail-box">📞 <strong>Telefon:</strong> <a href="tel:${usluga.telefon}" style="color: #333; text-decoration: none;">${usluga.telefon}</a></div>
+ <div class="detail-box">📧 <strong>Email:</strong> <a href="mailto:${usluga.email}" style="color: #333; text-decoration: none;">${usluga.email || '-'}</a></div>
+  <div class="detail-box">📍 <strong>Adresa:</strong> ${usluga.grad}, ${usluga.drzava}</div>
+  <div class="detail-box">💸 <strong>Cijena:</strong> ${usluga.cijena || '-'}</div>
+  <div class="detail-box">🧰 <strong>Iskustvo:</strong> ${usluga.iskustvo || '-'}</div>
+  <div class="detail-box">📝 <strong>Opis:</strong><br>${usluga.opis}</div>
+`;
+
+// ⬇️ Dodaj ovdje, UNUTAR funkcije
+  if (usluga.website) {
+    detalji.innerHTML += `<div class="detail-box">🌐 <strong>Website:</strong> <a href="${usluga.website}" target="_blank" style="color: #333; text-decoration: none;">${usluga.website}</a></div>`;
+  }
+  if (usluga.facebook) {
+    detalji.innerHTML += `<div class="detail-box">📘 <strong>Facebook:</strong> <a href="${usluga.facebook}" target="_blank" style="color: #333; text-decoration: none;">${usluga.facebook}</a></div>`;
+  }
+  if (usluga.instagram) {
+    detalji.innerHTML += `<div class="detail-box">📸 <strong>Instagram:</strong> <a href="${usluga.instagram}" target="_blank" style="color: #333; text-decoration: none;">${usluga.instagram}</a></div>`;
+  }
+
 
   if (window.innerWidth < 768) {
     leftPage.classList.remove('active');
@@ -301,6 +316,8 @@ async function popuniFormuIzFirestora() {
     console.error("Greška pri dohvaćanju korisničkih podataka:", err);
   }
 }
+
+
 
 
 
@@ -373,6 +390,10 @@ async function popuniFormuIzFirestora() {
       const opis = document.getElementById('opis').value;
       const cijena = document.getElementById('cijena').value;
       const iskustvo = document.getElementById('iskustvo').value;
+      const website = document.getElementById('website').value;
+const facebook = document.getElementById('facebook').value;
+const instagram = document.getElementById('instagram').value;
+
 
       if (!ime || !kategorija || !telefon || !grad || !drzava || !opis) {
         alert("Popuni obavezna polja.");
@@ -380,11 +401,24 @@ async function popuniFormuIzFirestora() {
       }
 
       db.collection("usluge").add({
-        ime, kategorija, telefon, email, grad, drzava, opis, cijena, iskustvo, userId: uid || null
-      }).then(() => {
-        closePopup();
-        ucitajUsluge();
-      });
+  ime,
+  kategorija,
+  telefon,
+  email,
+  grad,
+  drzava,
+  opis,
+  cijena,
+  iskustvo,
+  website,
+  facebook,
+  instagram,
+  userId: uid || null  // <-- ovo obavezno!
+}).then(() => {
+  closePopup();
+  ucitajUsluge(); // ponovo učitaj usluge nakon dodavanja
+});
+
     }
 
     ucitajUsluge();
@@ -520,7 +554,10 @@ function vratiNaImena() {
   font-size: 1rem;
   line-height: 1.6;
   animation: fadein 0.6s ease;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
+
 
 
 
@@ -763,11 +800,14 @@ function vratiNaImena() {
   background: #f1f9ff;
   border-left: 4px solid #3498db;
   padding: 1rem;
-  margin-bottom: -1.1rem;
+  margin-bottom: -2.1rem;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   font-size: 1rem;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
+
 
 
 
