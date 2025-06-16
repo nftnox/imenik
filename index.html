@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Imenik | Dobrodošao</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
- 
+ <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 </head>
 <body>
 
@@ -100,6 +102,8 @@
    <input type="text" id="website" placeholder="Web stranica (opcionalno)">
 <input type="text" id="facebook" placeholder="Facebook stranica (opcionalno)">
 <input type="text" id="instagram" placeholder="Instagram profil (opcionalno)">
+<input type="text" id="mapLokacija" placeholder="Pretraži grad ili adresu (opcionalno)">
+<div id="mapaUnos" style="height: 300px; width: 100%; margin-top: 10px;"></div>
 
       <!-- LOKACIJA: Entitet > Kanton > Grad -->
 <label for="entitet">Lokacija</label>
@@ -282,6 +286,23 @@ function popuniGradove() {
   }
 
 
+  if (usluga.lokacija) {
+  detalji.innerHTML += `
+    <div class="detail-box">
+      🗺️ <strong>Lokacija na karti:</strong>
+      <div id="mapaDetalji" style="height: 300px; width: 100%; margin-top: 10px;"></div>
+    </div>
+  `;
+  setTimeout(() => {
+    const map = L.map('mapaDetalji').setView([usluga.lokacija.lat, usluga.lokacija.lng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    L.marker([usluga.lokacija.lat, usluga.lokacija.lng]).addTo(map);
+  }, 100);
+}
+
+
   if (window.innerWidth < 768) {
     leftPage.classList.remove('active');
     rightPage.classList.add('active');
@@ -342,6 +363,44 @@ async function popuniFormuIzFirestora() {
     katEl.style.marginLeft = '1rem';
     katEl.onclick = () => {
       leftPage.innerHTML = `<h2>${kat}</h2>`;
+      const abeceda = ["A", "B", "C", "Č", "Ć", "D", "Dž", "Đ", "E", "F", "G", "H", "I", "J", "K", "L", "Lj", "M", "N", "Nj", "O", "P", "R", "S", "Š", "T", "U", "V", "Z", "Ž"];
+const traka = document.createElement('div');
+traka.className = 'slova-traka';
+abeceda.forEach(slovo => {
+  const dugme = document.createElement('button');
+  dugme.textContent = slovo;
+  dugme.onclick = () => {
+    const filtrirani = usluge[kat].filter(u => (u.ime || "").toUpperCase().startsWith(slovo));
+    prikaziFiltrirane(filtrirani, kat);
+    Array.from(traka.children).forEach(b => b.classList.remove("aktivno-slovo"));
+    dugme.classList.add("aktivno-slovo");
+  };
+  traka.appendChild(dugme);
+});
+leftPage.appendChild(traka);
+
+
+
+function prikaziFiltrirane(lista, kat) {
+  const stari = document.querySelectorAll('.person-name, .btn-kategorije');
+  stari.forEach(el => el.remove());
+
+  const sortirani = lista.sort((a, b) => a.ime.localeCompare(b.ime));
+  sortirani.forEach(usluga => {
+    const span = document.createElement('span');
+    span.className = 'person-name';
+    span.textContent = usluga.ime;
+    span.onclick = () => prikaziDetalje(usluga);
+    leftPage.appendChild(span);
+  });
+
+  const btn = document.createElement('button');
+  btn.textContent = '⬅ Nazad na kategorije';
+  btn.className = 'btn-back btn-kategorije';
+  btn.onclick = ucitajUsluge;
+  leftPage.appendChild(btn);
+}
+
 
       // ✅ SORTIRANJE KORISNIKA PO IMENU
       const sortirani = usluge[kat].sort((a, b) => a.ime.localeCompare(b.ime));
@@ -371,8 +430,10 @@ async function popuniFormuIzFirestora() {
    function openPopup() {
   document.getElementById('popup').style.display = 'flex';
   document.getElementById('mobileMenu').style.display = 'none';
-  popuniFormuIzFirestora(); // ✅ Popuni polja iz Firestore
+  popuniFormuIzFirestora();
+  initLeafletMap();
 }
+
 
 
 
@@ -393,6 +454,10 @@ async function popuniFormuIzFirestora() {
       const website = document.getElementById('website').value;
 const facebook = document.getElementById('facebook').value;
 const instagram = document.getElementById('instagram').value;
+lokacija: selectedLocation ? {
+  lat: selectedLocation.lat,
+  lng: selectedLocation.lng
+} : null
 
 
       if (!ime || !kategorija || !telefon || !grad || !drzava || !opis) {
@@ -401,23 +466,18 @@ const instagram = document.getElementById('instagram').value;
       }
 
       db.collection("usluge").add({
-  ime,
-  kategorija,
-  telefon,
-  email,
-  grad,
-  drzava,
-  opis,
-  cijena,
-  iskustvo,
-  website,
-  facebook,
-  instagram,
-  userId: uid || null  // <-- ovo obavezno!
+  ime, kategorija, telefon, email, grad, drzava, opis,
+  cijena, iskustvo, website, facebook, instagram,
+  userId: uid || null,
+  lokacija: selectedLocation ? {
+    lat: selectedLocation.lat,
+    lng: selectedLocation.lng
+  } : null
 }).then(() => {
   closePopup();
-  ucitajUsluge(); // ponovo učitaj usluge nakon dodavanja
+  ucitajUsluge();
 });
+
 
     }
 
@@ -431,6 +491,42 @@ const instagram = document.getElementById('instagram').value;
     menu.style.display = 'block';
   }
 }
+
+
+
+let leafletMap, leafletMarker, selectedLocation = null;
+
+function initLeafletMap() {
+  const defaultLatLng = [44.7866, 20.4489]; // Beograd (default centar)
+
+  leafletMap = L.map('mapaUnos').setView(defaultLatLng, 8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(leafletMap);
+
+  leafletMarker = L.marker(defaultLatLng, { draggable: true }).addTo(leafletMap);
+
+  leafletMarker.on('dragend', function (e) {
+    selectedLocation = leafletMarker.getLatLng();
+  });
+
+  // Pretraga (opcionalno, ručno unese adresu)
+  document.getElementById("mapLokacija").addEventListener("change", async function () {
+    const adresa = this.value;
+    if (!adresa) return;
+
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(adresa)}`);
+    const podaci = await res.json();
+    if (podaci.length > 0) {
+      const { lat, lon } = podaci[0];
+      const latlng = [parseFloat(lat), parseFloat(lon)];
+      leafletMap.setView(latlng, 14);
+      leafletMarker.setLatLng(latlng);
+      selectedLocation = leafletMarker.getLatLng();
+    }
+  });
+}
+
 
 
 function vratiNaImena() {
@@ -469,17 +565,19 @@ function vratiNaImena() {
     header h1 { margin: 0; font-size: 1.8rem; }
 
     .book {
-      display: flex;
-      justify-content: center;
-      align-items: stretch;
-      margin: 2rem auto;
-      max-width: 1000px;
-      height: 600px;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      background: white;
-      overflow: hidden;
-    }
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  margin: 2rem auto;
+  max-width: 1000px;
+  min-height: 80vh;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  background: white;
+  overflow: hidden;
+}
+
 
    @media (min-width: 769px) {
   .left-page, .right-page {
@@ -493,7 +591,10 @@ function vratiNaImena() {
   .left-page {
     border-right: 4px solid red;
     background: #eaf4ff;
+    position: relative; 
   }
+
+
 
   .right-page {
     background: #ffffff;
@@ -600,23 +701,29 @@ function vratiNaImena() {
     }
 
     #popup {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      justify-content: center;
-      align-items: center;
-    }
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+  overflow: auto; /* ✅ Dodaj ovo */
+  padding: 1rem;   /* ✅ Dodaj malo razmaka na mobitelima */
+}
+
 
     #popup-content {
-      background: white;
-      padding: 2rem;
-      border-radius: 10px;
-      width: 100%;
-      max-width: 500px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    }
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  max-height: 95vh;     /* ✅ Sprječava da popup ide van ekrana */
+  overflow-y: auto;     /* ✅ Unutrašnji scroll ako treba */
+}
+
 
     #popup-content input, #popup-content textarea {
       width: 100%;
@@ -835,6 +942,99 @@ function vratiNaImena() {
   font-size: 1.1rem;
 }
 
+
+.slova-traka {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* desno poravnanje */
+  gap: 0.3rem;
+  padding-right: 1rem;
+  padding-top: 1rem;
+    position: absolute;      /* ⬅️  NOVO  – “izvadi” slova iz normalnog toka */
+  top: 1rem;               /* udalji malo od vrha po želji */
+  right: 1rem; 
+}
+
+.slova-traka button {
+  padding: 0.3rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.slova-traka button:hover {
+  color: #3498db;
+}
+
+.aktivno-slovo {
+  color: #3498db;
+  font-weight: 700;
+  background: none;
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .left-page.active {
+    display: block;
+    position: relative;
+    max-height: 600px; /* ili koliko želiš */
+    overflow-y: auto;
+  }
+
+  .slova-traka {
+    position: absolute;
+    top: 50px; /* ručno prilagođavaš */
+    left: 10px; /* ručno prilagođavaš */
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 10;
+  }
+
+  .slova-traka button {
+    font-size: 12px;
+    padding: 2px 4px;
+  }
+}
+
+@media (max-width: 768px) {
+  .left-page {
+    position: relative;
+    width: 100%;         /* zauzmi punu širinu */
+    min-height: 500px;   /* neka ima mjesta */
+    overflow-y: visible; /* da se ne sakrije ništa */
+  }
+
+  .slova-traka {
+    position: absolute;
+    top: 100px;
+    right: 5px;          /* sada ulazi u prostor koji si označio */
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    z-index: 10;
+  }
+
+  .slova-traka button {
+    font-size: 14px;
+    padding: 2px 6px;
+    background: none;
+    border: none;
+    color: #333;
+    font-weight: bold;
+  }
+
+  .slova-traka button:hover {
+    color: #3498db;
+  }
+}
+
   </style>
+
+
+
 
 </html>
