@@ -39,6 +39,7 @@
     </p>
     <a class="cta-button" href="#leftPage">🔎 Pregledaj usluge</a>
   </div>
+  
 </section>
 
 
@@ -352,6 +353,7 @@ async function popuniFormuIzFirestora() {
   });
 
   leftPage.innerHTML = '<h2>📘 Kategorije</h2>';
+  
 
   // ✅ SORTIRANJE KATEGORIJA
   const sortiraneKategorije = Object.keys(usluge).sort((a, b) => a.localeCompare(b));
@@ -363,6 +365,140 @@ async function popuniFormuIzFirestora() {
     katEl.style.marginLeft = '1rem';
     katEl.onclick = () => {
       leftPage.innerHTML = `<h2>${kat}</h2>`;
+
+// 🔽 Dodaj dropdown filtere za lokaciju
+const filterDiv = document.createElement("div");
+filterDiv.style.margin = "1rem 0";
+filterDiv.innerHTML = `
+  <label><strong>Lokacija:</strong></label><br>
+ <select id="lokacijaDropdown" style="
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #f9f9f9;
+  color: #333;
+  width: 100%;
+  max-width: 220px;
+"></select>
+  <div id="lokacijaNazad" style="margin-top: 4px; display: none;">
+  <a href="#" style="font-size: 0.78rem; color: #666; text-decoration: underline;">⬅ Vrati se nazad</a>
+</div>
+
+`;
+leftPage.appendChild(filterDiv);
+
+
+
+
+const lokacijeHierarhija = {
+  "Federacija BiH": {
+    "Kanton Sarajevo": ["Sarajevo", "Ilidža", "Vogošća", "Hadžići", "Novi Grad", "Centar", "Stari Grad"],
+    "Zeničko-dobojski kanton": ["Zenica", "Zavidovići", "Visoko", "Tešanj"],
+    "Tuzlanski kanton": ["Tuzla", "Živinice", "Srebrenik", "Lukavac"],
+    "Unsko-sanski kanton": ["Bihać", "Cazin", "Velika Kladuša", "Sanski Most"],
+    "Hercegovačko-neretvanski kanton": ["Mostar", "Čapljina", "Konjic", "Stolac"],
+    "Srednjobosanski kanton": ["Travnik", "Bugojno", "Kiseljak", "Jajce"],
+    "Zapadnohercegovački kanton": ["Široki Brijeg", "Grude", "Ljubuški", "Posušje"],
+    "Bosansko-podrinjski kanton": ["Goražde"],
+    "Posavski kanton": ["Odžak", "Orašje", "Domaljevac"],
+    "Kanton 10": ["Livno", "Tomislavgrad", "Kupres"]
+  },
+  "Republika Srpska": {
+    "Banja Luka regija": ["Banja Luka", "Prijedor", "Gradiška"],
+    "Bijeljina regija": ["Bijeljina", "Zvornik", "Bratunac"],
+    "Istočno Sarajevo regija": ["Istočno Sarajevo", "Pale", "Sokolac"],
+    "Trebinje regija": ["Trebinje", "Bileća", "Gacko"],
+    "Doboj regija": ["Doboj", "Derventa", "Modriča"],
+    "Mrkonjić Grad regija": ["Mrkonjić Grad", "Šipovo", "Jezer"]
+  },
+  "Brčko distrikt": {
+    "Brčko distrikt": ["Brčko"]
+  }
+};
+
+const dropdown = document.getElementById("lokacijaDropdown");
+const btnNazad = document.querySelector("#lokacijaNazad");
+const linkNazad = btnNazad.querySelector("a");
+
+let faza = "entitet";
+let entitet = "";
+let kanton = "";
+
+// ▶️ ENTITET
+function prikaziEntitete() {
+  faza = "entitet";
+  dropdown.innerHTML = `<option value="">-- Odaberi entitet --</option>`;
+  Object.keys(lokacijeHierarhija).forEach(e => {
+    const opt = document.createElement("option");
+    opt.value = e;
+    opt.textContent = e;
+    dropdown.appendChild(opt);
+  });
+  btnNazad.style.display = "none";
+}
+
+// ▶️ KANTON
+function prikaziKantone(odabraniEntitet) {
+  faza = "kanton";
+  entitet = odabraniEntitet;
+  dropdown.innerHTML = `<option value="">-- Odaberi kanton --</option>`;
+  Object.keys(lokacijeHierarhija[entitet]).forEach(k => {
+    const opt = document.createElement("option");
+    opt.value = k;
+    opt.textContent = k;
+    dropdown.appendChild(opt);
+  });
+  btnNazad.style.display = "block";
+}
+
+// ▶️ GRAD
+function prikaziGradove(odabraniKanton) {
+  faza = "grad";
+  kanton = odabraniKanton;
+  dropdown.innerHTML = `<option value="">-- Odaberi grad --</option>`;
+  lokacijeHierarhija[entitet][kanton].forEach(g => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    opt.textContent = g;
+    dropdown.appendChild(opt);
+  });
+  btnNazad.style.display = "block";
+}
+
+// ▶️ AKCIJE
+dropdown.addEventListener("change", () => {
+  const vrijednost = dropdown.value;
+  if (!vrijednost) return;
+
+  if (faza === "entitet") {
+    prikaziKantone(vrijednost); // AUTOMATSKI ➝ kantoni
+  } else if (faza === "kanton") {
+    prikaziGradove(vrijednost); // AUTOMATSKI ➝ gradovi
+  } else if (faza === "grad") {
+    const filtrirani = usluge[kat].filter(u => u.grad === vrijednost);
+    prikaziFiltrirane(filtrirani, kat); // AUTOMATSKI ➝ prikaz
+  }
+});
+
+// ▶️ Nazad dugme
+linkNazad.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (faza === "grad") {
+    prikaziKantone(entitet);
+  } else if (faza === "kanton") {
+    prikaziEntitete();
+  }
+});
+
+prikaziEntitete(); // START
+
+
+
+
+
+      
       const abeceda = ["A", "B", "C", "Č", "Ć", "D", "Dž", "Đ", "E", "F", "G", "H", "I", "J", "K", "L", "Lj", "M", "N", "Nj", "O", "P", "R", "S", "Š", "T", "U", "V", "Z", "Ž"];
 const traka = document.createElement('div');
 traka.className = 'slova-traka';
